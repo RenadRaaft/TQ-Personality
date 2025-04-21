@@ -7,7 +7,7 @@ import pandas as pd
 app = FastAPI()
 
 
-model = joblib.load("cluster_model.pkl")  #استنى وريف ترسله
+model = joblib.load("../models/kmeans_model.pkl")  #استنى وريف ترسله
 
 # أوصاف الكلسترات
 cluster_descriptions = {
