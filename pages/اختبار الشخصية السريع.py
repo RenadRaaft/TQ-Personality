@@ -5,6 +5,28 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="تحليل الشخصية", layout="wide")
 
+st.markdown("""
+<style>
+    /* Base RTL settings */
+    .rtl, .stMarkdown, .stTitle, p, h1, h2, h3, h4, h5, h6, .stButton {
+        direction: rtl;
+        text-align: right;
+    }
+    html, body, [class*="st-"] {
+        background-color: #f5f7fa;
+    }
+            
+    /* Ensure slider label text stays RTL */
+    .stSlider label {
+        text-align: right;
+        width: 100%;
+        display: block;
+    }
+
+</style>
+""", unsafe_allow_html=True)
+
+
 # عنوان الموقع
 st.title("تحليل شخصيتك بطريقتنا الخاصة")
 
