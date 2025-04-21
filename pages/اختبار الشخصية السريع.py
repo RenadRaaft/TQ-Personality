@@ -1,5 +1,9 @@
 import streamlit as st
 import requests
+import pandas as pd
+import plotly.graph_objects as go
+
+st.set_page_config(page_title="تحليل الشخصية", layout="wide")
 
 # عنوان الموقع
 st.title("تحليل شخصيتك بطريقتنا الخاصة")
@@ -32,24 +36,63 @@ questions = {
     'CSN4': 'أخبص الأمور وما أرتبها'
 }
 
+# جمع الإجابات
 responses = {}
-for key, question in questions.items():
-    responses[key] = st.slider(question, min_value=0, max_value=5, value=3, key=key)
+with st.form("form_arabic"):
+    for key, question in questions.items():
+        responses[key] = st.slider(question, min_value=0, max_value=5, value=3, key=key)
+    submitted = st.form_submit_button("احللني!")
 
-# زر الإرسال
-if st.button("احللني!"):
+# إرسال وتحليل
+if submitted:
     try:
         res = requests.post("http://127.0.0.1:8000/analyze", json=responses)
 
         if res.status_code == 200:
             result = res.json()
+
             st.success("✨ تم التحليل! وهذه النتيجة 👇")
-            st.markdown(f"### Cluster رقم: `{result['cluster']}`")
+            st.markdown(f"### الكلستر الخاص بك: `{result['cluster']}`")
             st.markdown(f"**{result['description']}**")
-            
-            st.markdown("#### درجاتك في الأبعاد الخمسة:")
-            for trait, score in result['scores'].items():
-                st.markdown(f"- **{trait.capitalize()}**: {score}")
+
+            st.markdown("### ملخص الأبعاد الخمسة:")
+            trait_scores = result["scores"]
+            summary_df = pd.DataFrame([trait_scores])
+            st.dataframe(summary_df.style.format(precision=1), use_container_width=True)
+
+            # رسم بياني بـ Plotly
+            st.markdown("### تمثيل مرئي لأبعادك")
+            traits = list(trait_scores.keys())
+            values = [trait_scores[t] * 10 for t in traits]
+
+            fig = go.Figure()
+
+            fig.add_trace(go.Bar(
+                x=traits,
+                y=values,
+                name='قيمك',
+                marker_color='lightgreen',
+                opacity=0.6
+            ))
+
+            fig.add_trace(go.Scatter(
+                x=traits,
+                y=values,
+                mode='lines+markers',
+                name='خط التحليل',
+                line=dict(color='red'),
+                marker=dict(size=10)
+            ))
+
+            fig.update_layout(
+                title=f"الكلستر رقم {result['cluster']}",
+                yaxis=dict(range=[0, 50]),
+                xaxis_title="البُعد",
+                yaxis_title="الدرجة (مضروبة ×10)",
+                template="plotly_white"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
 
         else:
             st.error("💥 صار خطأ في الاتصال بالـ API. تأكد أنه شغال.")

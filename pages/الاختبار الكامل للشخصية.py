@@ -1,14 +1,39 @@
-# app.py
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import joblib
-from PIL import Image
+from sklearn.preprocessing import MinMaxScaler
 
-# Load your trained model
+# تحميل النموذج المدرب
 k_fit = joblib.load('models/kmeans_model.pkl')
 
-# Define question groups
+# وصف كل كلستر
+cluster_descriptions = {
+    0: "😌 ذا الواحد اللي عايش حياته على مود رايق. كل شيء عنده \"عادي\"، يقهوي نفسه الساعة ٥ العصر ويحوس بالبلانر يوم ويختفي سنة...",
+    1: "🎭 ذا اللي قلبه ألين من خبز التنور. يبكي من إعلان زين ويكتب خواطر عن ذكرى منديل...",
+    2: "📚 ذا اللي لو قلت له \"خل نروح الطايف\" قالك: \"طيب أرسل لي على الإيميل الخطة\"...",
+    3: "🔕 ذا اللي تحسبه طالع من مسلسل كوري، بس هو ساكن في حي الربيع، بس ما أحد قد شافه...",
+    4: "🎢 هذا بركان عواطف. يغير اهتماماته أسرع من عروض نون، وكل شوي يدخل هواية جديدة..."
+}
+
+st.set_page_config(page_title="تحليل الشخصية", layout="wide")
+
+# عنوان الموقع
+st.title("تحليل شخصيتك بطريقتنا الخاصة")
+
+st.markdown("""
+### هل عمرك حسّيت إنك كائن غريب؟
+لا تشيل هم، احنا هنا نحلل شخصيتك ونطقطق عليها شوي (بحب طبعًا).
+
+في هالموقع، ما راح نقول لك إنك "طموح ومبدع" وبس، لا لا...
+راح نكشف لك الحقيقة كاملة: إنك مزاجي، تحب المفطّح، وتخاف من المشاعر 😌
+
+جاوب على الأسئلة وخلّنا نبدأ حفلة التحليل ✨
+""")
+
+st.markdown("**اختر من 0 (لا أوافق أبدًا) إلى 5 (أوافق تمامًا)**")
+
+# الأسئلة
 ext_questions = {
     'EXT1': 'I am the life of the party',
     'EXT2': "I don't talk a lot",
@@ -74,77 +99,74 @@ opn_questions = {
     'OPN10': 'I am full of ideas'
 }
 
-# Combine all questions
+# دمج وترتيب الأسئلة
 all_questions = {**ext_questions, **est_questions, **agr_questions, **csn_questions, **opn_questions}
-
-# Sort keys to maintain order
 ordered_keys = sorted(all_questions.keys(), key=lambda x: (x[:3], int(x[3:])))
 questions_ordered = {k: all_questions[k] for k in ordered_keys}
 
-st.set_page_config(page_title="Personality Cluster Test", layout="wide")
-st.title("🧠 Personality Cluster Predictor")
-st.write("Please answer the following questions on a scale from 0 (Strongly Disagree) to 5 (Strongly Agree).")
-
+# واجهة المستخدم
 responses = {}
-
-# Input form
-with st.form("personality_form"):
+with st.form("form_full_arabic"):
     for key, question in questions_ordered.items():
-        responses[key] = st.slider(f"{key}: {question}", 0, 5, 3)
-    submitted = st.form_submit_button("Submit")
+        responses[key] = st.slider(f"{key}: {question}", min_value=0, max_value=5, value=3, key=key)
+    submitted = st.form_submit_button("احللني!")
 
 if submitted:
-    df = pd.DataFrame([responses])
+    try:
+        df = pd.DataFrame([responses])
+        df = df[ordered_keys]
 
-    correct_columns = [
-        'EXT1', 'EXT2', 'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',
-        'EST1', 'EST2', 'EST3', 'EST4', 'EST5', 'EST6', 'EST7', 'EST8', 'EST9', 'EST10',
-        'AGR1', 'AGR2', 'AGR3', 'AGR4', 'AGR5', 'AGR6', 'AGR7', 'AGR8', 'AGR9', 'AGR10',
-        'CSN1', 'CSN2', 'CSN3', 'CSN4', 'CSN5', 'CSN6', 'CSN7', 'CSN8', 'CSN9', 'CSN10',
-        'OPN1', 'OPN2', 'OPN3', 'OPN4', 'OPN5', 'OPN6', 'OPN7', 'OPN8', 'OPN9', 'OPN10'
-    ]
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        scaler.fit(pd.DataFrame([[0]*50, [5]*50], columns=ordered_keys))
+        scaled_df = scaler.transform(df)
 
-    df = df[correct_columns]  # Ensure exact order before predicting
+        cluster = int(k_fit.predict(scaled_df)[0])
+        cluster_description = cluster_descriptions.get(cluster, "🤷‍♂️ لا يوجد وصف لهذا الكلستر")
 
-    # Predict cluster
-    cluster = k_fit.predict(df)[0]
+        trait_scores = {
+            'extroversion': df[[f'EXT{i}' for i in range(1, 11)]].mean(axis=1).iloc[0],
+            'neurotic': df[[f'EST{i}' for i in range(1, 11)]].mean(axis=1).iloc[0],
+            'agreeable': df[[f'AGR{i}' for i in range(1, 11)]].mean(axis=1).iloc[0],
+            'conscientious': df[[f'CSN{i}' for i in range(1, 11)]].mean(axis=1).iloc[0],
+            'open': df[[f'OPN{i}' for i in range(1, 11)]].mean(axis=1).iloc[0],
+        }
 
-    # Define groups
-    col_list = list(df.columns)
-    ext = col_list[0:10]
-    est = col_list[10:20]
-    agr = col_list[20:30]
-    csn = col_list[30:40]
-    opn = col_list[40:50]
+        st.success("✨ تم التحليل! وهذه النتيجة 👇")
+        st.markdown(f"### الكلستر الخاص بك: `{cluster}`")
+        st.markdown(f"**{cluster_description}**")
 
-    # Compute trait scores
-    trait_scores = {
-        'extroversion': df[ext].sum(axis=1).iloc[0] / 10,
-        'neurotic': df[est].sum(axis=1).iloc[0] / 10,
-        'agreeable': df[agr].sum(axis=1).iloc[0] / 10,
-        'conscientious': df[csn].sum(axis=1).iloc[0] / 10,
-        'open': df[opn].sum(axis=1).iloc[0] / 10
-    }
+        st.markdown("### ملخص الأبعاد الخمسة:")
+        summary_df = pd.DataFrame([trait_scores])
+        st.dataframe(summary_df.style.format(precision=1), use_container_width=True)
 
-    # Show predicted cluster
-    st.subheader(f"🎯 You belong to **Cluster {cluster}**")
+        st.markdown("### تمثيل مرئي لأبعادك")
+        traits = list(trait_scores.keys())
+        values = [trait_scores[t] * 10 for t in traits]
 
-    # Show summary table
-    trait_scores["cluster"] = cluster
-    summary_df = pd.DataFrame([trait_scores])
-    st.write("### Sum of Your Question Groups")
-    st.dataframe(summary_df.style.format(precision=1), use_container_width=True)
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=traits,
+            y=values,
+            name='درجاتك',
+            marker_color='lightgreen',
+            opacity=0.6
+        ))
+        fig.add_trace(go.Scatter(
+            x=traits,
+            y=values,
+            mode='lines+markers',
+            name='مؤشر الشخصية',
+            line=dict(color='red'),
+            marker=dict(size=10)
+        ))
+        fig.update_layout(
+            title=f"الكلستر رقم {cluster}",
+            yaxis=dict(range=[0, 50]),
+            xaxis_title="البُعد",
+            yaxis_title="الدرجة (×10)",
+            template="plotly_white"
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Chart
-    st.write("### Visual Summary of Your Traits")
-    fig, ax = plt.subplots()
-    traits = list(trait_scores.keys())[:-1]  # Exclude cluster
-    values = [trait_scores[t] * 10 for t in traits]
-
-    ax.bar(traits, values, color='green', alpha=0.2)
-    ax.plot(traits, values, color='red', marker='o')
-    ax.set_ylim(0, 40)
-    ax.set_title(f"Cluster {cluster}")
-    plt.xticks(rotation=45)
-
-    st.pyplot(fig)
+    except Exception as e:
+        st.error(f"❌ صار خطأ في التحليل: {e}")
