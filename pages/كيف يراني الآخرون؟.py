@@ -8,6 +8,127 @@ import plotly.graph_objects as go
 # تحميل نموذج KMeans
 k_fit = joblib.load('models/kmeans_model.pkl')
 
+st.set_page_config(page_title="تصنيف الشخصيات حسب آراء الآخرين", layout="wide")
+
+st.markdown("""
+    <style>
+    /* الخط العام */
+    html, body, [class*="st-"] {
+        font-family: 'Cairo', sans-serif;
+        text-align: right;
+        background-color: #f5f7fa;
+        color: #333;
+    }
+  
+    h1, h2, h3 {
+        color: #2e5cb8;
+        margin-bottom: 10px;
+        font-family: 'Cairo', sans-serif !important;
+
+    }
+
+    ul {
+    background-color: #ffffff;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+    max-width: 700px;
+    margin: 10px 0 10px auto;  /* خلى auto بس لليسار */
+    line-height: 2;
+    text-align: right;
+    }
+    
+    li {
+    margin: 10px 0 10px auto;  /* خلى auto بس لليسار */
+    font-size: 18px;
+    }
+
+    p {
+        line-height: 1.8;
+    }
+
+    /* تحسين مظهر الصور */
+    img {
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* تحسين الزر لاحقًا إن وجد */
+    .stButton>button {
+        background-color: #2e5cb8;
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+        padding: 10px 20px;
+        transition: 0.3s;
+        border: none;
+    }
+
+    .stButton>button:hover {
+        background-color: #1c3f91;
+    }
+    </style>
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+    /* Base RTL settings */
+    .rtl, .stMarkdown, .stTitle, p, h1, h2, h3, h4, h5, h6, .stButton {
+        direction: rtl;
+        text-align: right;
+    }
+    html, body, [class*="st-"] {
+        background-color: #f5f7fa;
+    }
+            
+    /* Ensure slider label text stays RTL */
+    .stSlider label {
+        text-align: right;
+        width: 100%;
+        display: block;
+    }
+    /* Set all text color to black */
+    body, .stMarkdown, .stTitle, p, h1, h2, h3, h4, h5, h6, .stButton {
+        color: black;
+    }
+
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+    .stForm {
+        background-color: #f9f9f9;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        margin-bottom: 25px;
+        border: 1px solid #e0e0e0;
+    }
+    .stButton button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 25px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .stButton button:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+    .stButton button:active {
+        background-color: #004085;
+        transform: scale(1);
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # وصف كل كلستر
 cluster_descriptions = {
     0: "😌 ذا الواحد اللي عايش حياته على مود رايق. كل شيء عنده \"عادي\"، يقهوي نفسه الساعة ٥ العصر ويحوس بالبلانر يوم ويختفي سنة...",
@@ -19,23 +140,66 @@ cluster_descriptions = {
 
 # تعريف جميع مجموعات الأسئلة
 question_groups = {
-    "EXT": ['He/She is the life of the party', "He/She doesn't talk a lot", 'He/She feels comfortable around people',
-            'He/She keeps in the background', 'He/She starts conversations', 'He/She has little to say',
-            'He/She talks to a lot of different people at parties', "He/She doesn't like to draw attention to himself/herself",
-            "He/She doesn't mind being the center of attention", 'He/She is quiet around strangers'],
-    "EST": ['He/She gets stressed out easily', 'He/She is relaxed most of the time', 'He/She worries about things',
-            'He/She seldom feels blue', 'He/She is easily disturbed', 'He/She gets upset easily', 'He/She changes his/her mood a lot',
-            'He/She has frequent mood swings', 'He/She gets irritated easily', 'He/She often feels blue'],
-    "AGR": ['He/She feels little concern for others', 'He/She is interested in people', 'He/She insults people',
-            "He/She sympathizes with others' feelings", "He/She is not interested in other people's problems",
-            'He/She has a soft heart', 'He/She is not really interested in others', 'He/She takes time out for others',
-            "He/She feels others' emotions", 'He/She makes people feel at ease'],
-    "CSN": ['He/She is always prepared', 'He/She leaves his/her belongings around', 'He/She pays attention to details',
-            'He/She makes a mess of things', 'He/She gets chores done right away', 'He/She often forgets to put things back in their proper place',
-            'He/She likes order', 'He/She shirks his/her duties', 'He/She follows a schedule', 'He/She is exacting in his/her work'],
-    "OPN": ['He/She has a rich vocabulary', 'He/She has difficulty understanding abstract ideas', 'He/She has a vivid imagination',
-            'He/She is not interested in abstract ideas', 'He/She has excellent ideas', 'He/She does not have a good imagination',
-            'He/She is quick to understand things', 'He/She uses difficult words', 'He/She spends time reflecting on things', 'He/She is full of ideas']
+    "EXT": [
+        'هو/هي جو الحفلة',
+        "هو/هي ما يسولف كثير",
+        'هو/هي يكون مرتاح مع الناس',
+        'هو/هي يكون في الخلفية وخلف الأضواء',
+        'هو/هي يبادر ويبدأ السوالف',
+        'هو/هي ما عنده/عندها كلام كثير يقوله',
+        'هو/هي يسولف مع ناس كثير بالحفلات',
+        "هو/هي ما يحب يلفت الانتباه لنفسه/لنفسها",
+        "هو/هي ما عنده/عندها مشكلة يكون مركز الاهتمام",
+        'هو/هي يكون ساكت مع الغرباء'
+    ],
+    "EST": [
+        'هو/هي يتوتر بسرعة',
+        'هو/هي يكون رايق أغلب الوقت',
+        'هو/هي يشيل هم الأشياء',
+        'هو/هي نادراً يحس بالكآبة',
+        'هو/هي يتأثر بسهولة',
+        'هو/هي ينقهر بسرعة',
+        'هو/هي مزاجه يتغير كثير',
+        'هو/هي دايم يتقلب مزاجه',
+        'هو/هي يعصب بسهولة',
+        'هو/هي غالباً يحس بالكآبة'
+    ],
+    "AGR": [
+        'هو/هي ما يهتم بالناس كثير',
+        'هو/هي يحب ومهتم يعرف عن الناس',
+        'هو/هي يجرح الناس بكلامه',
+        "هو/هي يحس بمشاعر الناس",
+        "هو/هي ما تهمه مشاكل الناس",
+        'هو/هي قلبه طيب',
+        'هو/هي مب مرة يهتم بالناس',
+        'هو/هي يخصص وقت للناس',
+        "هو/هي يحس بمشاعر غيره",
+        'الناس يحسون بالراحة معه/معها'
+    ],
+    "CSN": [
+        'هو/هي دايم مستعد وصامل',
+        'هو/هي أغراضه مكركبة وحوسة',
+        'هو/هي يركز على التفاصيل',
+        'هو/هي يخرب الأمور',
+        'هو/هي يخلص شغله على طول',
+        'هو/هي ينسى يرجع الأشياء مكانها',
+        'هو/هي يحب الترتيب',
+        'هو/هي يتهرب من شغله',
+        'هو/هي يمشي على جدول',
+        'هو/هي يكون دقيق بشغله'
+    ],
+    "OPN": [
+        'هو/هي عنده محصول كلمات يعرف يستخدمه',
+        'هو/هي يلقى صعوبة يفهم الأفكار العميقة',
+        'هو/هي خياله واسع',
+        'هو/هي ما يحب الأفكار العميقة',
+        'هو/هي عنده أفكار رهيبة',
+        'هو/هي خياله مو مرة قوي',
+        'هو/هي يفهم الأمور بسرعة',
+        'هو/هي يستخدم كلمات صعبة',
+        'هو/هي يحب يقعد يفكر بالأشياء',
+        'هو/هي دايم عنده أفكار جديدة'
+    ]
 }
 
 # إنشاء قائمة الأسئلة
@@ -52,7 +216,6 @@ questions_ordered = {k: all_questions[k] for k in ordered_keys}
 CSV_FILE = "personality_votes.csv"
 
 # إعداد الواجهة
-st.set_page_config(page_title="تصنيف الشخصيات حسب آراء الآخرين", layout="wide")
 st.title("👥 تطبيق تصنيف الشخصية حسب تقييم الزملاء")
 
 st.markdown("يتم تقييم كل شخص بواسطة الآخرين. يعرض النظام متوسط درجات السمات وتوقع الانتماء لأحد المجموعات.")
@@ -77,7 +240,7 @@ with st.form("submit_form"):
 
     responses = {}
     for key, question in questions_ordered.items():
-        responses[key] = st.slider(f"{key}: {question}", 0, 5, 3)
+        responses[key] = st.slider(question, min_value=0, max_value=5, value=3, key=key)
 
     submitted = st.form_submit_button("إرسال التقييم")
 

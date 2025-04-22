@@ -18,8 +18,128 @@ cluster_descriptions = {
 
 st.set_page_config(page_title="تحليل الشخصية", layout="wide")
 
+st.markdown("""
+    <style>
+    /* الخط العام */
+    html, body, [class*="st-"] {
+        font-family: 'Cairo', sans-serif;
+        text-align: right;
+        background-color: #f5f7fa;
+        color: #333;
+    }
+  
+    h1, h2, h3 {
+        color: #2e5cb8;
+        margin-bottom: 10px;
+        font-family: 'Cairo', sans-serif !important;
+
+    }
+
+    ul {
+    background-color: #ffffff;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+    max-width: 700px;
+    margin: 10px 0 10px auto;  /* خلى auto بس لليسار */
+    line-height: 2;
+    text-align: right;
+    }
+    
+    li {
+    margin: 10px 0 10px auto;  /* خلى auto بس لليسار */
+    font-size: 18px;
+    }
+
+    p {
+        line-height: 1.8;
+    }
+
+    /* تحسين مظهر الصور */
+    img {
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* تحسين الزر لاحقًا إن وجد */
+    .stButton>button {
+        background-color: #2e5cb8;
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+        padding: 10px 20px;
+        transition: 0.3s;
+        border: none;
+    }
+
+    .stButton>button:hover {
+        background-color: #1c3f91;
+    }
+    </style>
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+    /* Base RTL settings */
+    .rtl, .stMarkdown, .stTitle, p, h1, h2, h3, h4, h5, h6, .stButton {
+        direction: rtl;
+        text-align: right;
+    }
+    html, body, [class*="st-"] {
+        background-color: #f5f7fa;
+    }
+            
+    /* Ensure slider label text stays RTL */
+    .stSlider label {
+        text-align: right;
+        width: 100%;
+        display: block;
+    }
+    /* Set all text color to black */
+    body, .stMarkdown, .stTitle, p, h1, h2, h3, h4, h5, h6, .stButton {
+        color: black;
+    }
+
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+    .stForm {
+        background-color: #f9f9f9;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        margin-bottom: 25px;
+        border: 1px solid #e0e0e0;
+    }
+    .stButton button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 25px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .stButton button:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+    .stButton button:active {
+        background-color: #004085;
+        transform: scale(1);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
 # عنوان الموقع
-st.title("تحليل شخصيتك بطريقتنا الخاصة")
+st.markdown('<h1 style="color: black;">تحليل شخصيتك بطريقتنا الخاصة</h1>', unsafe_allow_html=True)
 
 st.markdown("""
 ### هل عمرك حسّيت إنك كائن غريب؟
@@ -35,68 +155,68 @@ st.markdown("**اختر من 0 (لا أوافق أبدًا) إلى 5 (أوافق
 
 # الأسئلة
 ext_questions = {
-    'EXT1': 'I am the life of the party',
-    'EXT2': "I don't talk a lot",
-    'EXT3': 'I feel comfortable around people',
-    'EXT4': 'I keep in the background',
-    'EXT5': 'I start conversations',
-    'EXT6': 'I have little to say',
-    'EXT7': 'I talk to a lot of different people at parties',
-    'EXT8': "I don't like to draw attention to myself",
-    'EXT9': "I don't mind being the center of attention",
-    'EXT10': 'I am quiet around strangers'
+    'EXT1': 'أنا جو الحفلة',
+    'EXT2': "ما أسولف كثير",
+    'EXT3': ' أكون مرتاح مع الناس',
+    'EXT4': 'أكون في الخلفية وخلف الأضواء',
+    'EXT5': 'أبادر وأبدأ السوالف',
+    'EXT6': 'ما عندي كلام كثير أقوله',
+    'EXT7': 'أسولف مع ناس كثير بالحفلات',
+    'EXT8': "ما أحب ألفت الانتباه لنفسي",
+    'EXT9': "ما عندي مشكلة أكون مركز الاهتمام",
+    'EXT10': 'أكون ساكت مع الغرباء'
 }
 
 est_questions = {
-    'EST1': 'I get stressed out easily',
-    'EST2': 'I am relaxed most of the time',
-    'EST3': 'I worry about things',
-    'EST4': 'I seldom feel blue',
-    'EST5': 'I am easily disturbed',
-    'EST6': 'I get upset easily',
-    'EST7': 'I change my mood a lot',
-    'EST8': 'I have frequent mood swings',
-    'EST9': 'I get irritated easily',
-    'EST10': 'I often feel blue'
+    'EST1': 'أتوتر بسرعة',
+    'EST2': 'أكون رايق أغلب الوقت',
+    'EST3': 'أشيل هم الأشياء',
+    'EST4': 'نادراً أحس بالكآبة',
+    'EST5': 'أتأثر بسهولة',
+    'EST6': 'أنقهر بسرعة',
+    'EST7': 'مزاجي يتغير كثير',
+    'EST8': 'دايم يتقلب مزاجي',
+    'EST9': 'أعصب بسهولة',
+    'EST10': 'غالباً أحس بالكآبة'
 }
 
 agr_questions = {
-    'AGR1': 'I feel little concern for others',
-    'AGR2': 'I am interested in people',
-    'AGR3': 'I insult people',
-    'AGR4': "I sympathize with others' feelings",
-    'AGR5': "I am not interested in other people's problems",
-    'AGR6': 'I have a soft heart',
-    'AGR7': 'I am not really interested in others',
-    'AGR8': 'I take time out for others',
-    'AGR9': "I feel others' emotions",
-    'AGR10': 'I make people feel at ease'
+    'AGR1': 'ما أهتم بالناس كثير',
+    'AGR2': 'أحب ومهتم أعرف عن الناس',
+    'AGR3': 'أجرح الناس بكلامي',
+    'AGR4': "أحس بمشاعر الناس",
+    'AGR5': "ما تهمني مشاكل الناس",
+    'AGR6': 'قلبي طيب',
+    'AGR7': 'مب مرة أهتم بالناس',
+    'AGR8': 'أخصص وقت للناس',
+    'AGR9': "أحس بمشاعر غيري",
+    'AGR10': 'الناس يحسون بالراحة معي'
 }
 
 csn_questions = {
-    'CSN1': 'I am always prepared',
-    'CSN2': 'I leave my belongings around',
-    'CSN3': 'I pay attention to details',
-    'CSN4': 'I make a mess of things',
-    'CSN5': 'I get chores done right away',
-    'CSN6': 'I often forget to put things back in their proper place',
-    'CSN7': 'I like order',
-    'CSN8': 'I shirk my duties',
-    'CSN9': 'I follow a schedule',
-    'CSN10': 'I am exacting in my work'
+    'CSN1': 'دايم مستعد وصامل',
+    'CSN2': 'أغراضي مكركبة وحوسة',
+    'CSN3': 'أركز على التفاصيل',
+    'CSN4': 'أخرب الأمور',
+    'CSN5': 'أخلص شغلي على طول',
+    'CSN6': 'أنسى أرجع الأشياء مكانها',
+    'CSN7': 'أحب الترتيب',
+    'CSN8': 'أتهرب من شغلي',
+    'CSN9': 'أمشي على جدول',
+    'CSN10': 'أكون دقيق بشغلي'
 }
 
 opn_questions = {
-    'OPN1': 'I have a rich vocabulary',
-    'OPN2': 'I have difficulty understanding abstract ideas',
-    'OPN3': 'I have a vivid imagination',
-    'OPN4': 'I am not interested in abstract ideas',
-    'OPN5': 'I have excellent ideas',
-    'OPN6': 'I do not have a good imagination',
-    'OPN7': 'I am quick to understand things',
-    'OPN8': 'I use difficult words',
-    'OPN9': 'I spend time reflecting on things',
-    'OPN10': 'I am full of ideas'
+    'OPN1': 'عندي محصول كلمات أعرف أستخدمه',
+    'OPN2': 'ألقى صعوبة أفهم الأفكار العميقة',
+    'OPN3': 'خيالي واسع',
+    'OPN4': 'ما أحب الأفكار العميقة',
+    'OPN5': 'عندي أفكار رهيبة',
+    'OPN6': 'خيالي مو مرة قوي',
+    'OPN7': 'أفهم الأمور بسرعة',
+    'OPN8': 'أستخدم كلمات صعبة',
+    'OPN9': 'أحب أقعد أفكر بالأشياء',
+    'OPN10': 'دايم عندي أفكار جديدة'
 }
 
 # دمج وترتيب الأسئلة
@@ -106,9 +226,9 @@ questions_ordered = {k: all_questions[k] for k in ordered_keys}
 
 # واجهة المستخدم
 responses = {}
-with st.form("form_full_arabic"):
+with st.form("form_arabic"):
     for key, question in questions_ordered.items():
-        responses[key] = st.slider(f"{key}: {question}", min_value=0, max_value=5, value=3, key=key)
+        responses[key] = st.slider(question, min_value=0, max_value=5, value=3, key=key)
     submitted = st.form_submit_button("احللني!")
 
 if submitted:
