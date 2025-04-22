@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
+import os
 
 
 st.set_page_config(page_title="مرحبًا بك", layout="wide")
@@ -69,7 +70,8 @@ st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
 """, unsafe_allow_html=True)
 
-head_img = Image.open("public/6963-Photoroom.png")  # Replace with your image path
+image_path = os.path.join(os.path.dirname(__file__), "public", "6963-Photoroom.png")
+head_img = Image.open(image_path)
 st.image(head_img, use_container_width=True)
 
 
@@ -96,7 +98,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Centered Image
-image = Image.open("public/5personality-Photoroom.png")
+image_path = os.path.join(os.path.dirname(__file__), "public", "5personality-Photoroom.png")
+image = Image.open(image_path)
+
 left_co, cent_co, right_co = st.columns(3)
 with cent_co:
     st.image(image, caption="السمات الخمس الكبرى", use_container_width=True)
