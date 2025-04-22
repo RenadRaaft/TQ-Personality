@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import requests
-from collections import Counter
 import plotly.graph_objects as go
 
 st.set_page_config(page_title="تصنيف الشخصيات حسب تقييم الزملاء", layout="wide")
@@ -15,7 +14,7 @@ cluster_descriptions = {
     4: "🎢 هذا بركان عواطف. يغير اهتماماته أسرع من عروض نون، وكل شوي يدخل هواية جديدة..."
 }
 
-# تنسيق عام للصفحة
+# تنسيق عام
 st.markdown("""
 <style>
     html, body, [class*="st-"] {
@@ -55,6 +54,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ==== العنوان ====
 st.title("👥 تطبيق تصنيف الشخصية حسب تقييم الزملاء")
 st.markdown("يتم تقييم كل شخص بواسطة الآخرين. يعرض النظام متوسط درجات السمات وتوقع الانتماء لأحد المجموعات.")
 
@@ -95,21 +95,36 @@ with st.form("submit_form"):
 
     submitted = st.form_submit_button("إرسال التقييم")
 
-# ===== تحليل وإرسال البيانات إلى API =====
+# ===== إرسال التقييم إلى الـ API =====
 if submitted:
     try:
         payload = {
             "target_person": target_person_name,
             "rater": rater_name,
-            **responses  # يفك القاموس responses ويدمجه في الـ payload
+            **responses
         }
         res = requests.post("https://tq-personality.onrender.com/analyze-peer", json=payload)
 
         if res.status_code == 200:
-            result = res.json()
             st.success(f"✅ تم تسجيل تقييمك لـ {target_person_name} بنجاح!")
+        else:
+            st.error("💥 صار خطأ في الاتصال بالـ API. تأكد أنه شغال.")
+    except Exception as e:
+        st.error(f"❌ فشل الاتصال بالسيرفر: {e}")
 
-            st.markdown(f"### الكلستر الخاص بـ {target_person_name}: `{result['cluster']}`")
+# ===== عرض تحليل شخص معين =====
+st.subheader("👁️ عرض تحليل أي شخص")
+person_to_view = st.selectbox("اختر شخصاً لعرض تحليله:", names, key="viewer")
+
+if st.button("عرض التحليل"):
+    try:
+        # res = requests.get(f"http://127.0.0.1:8000/reviews/{person_to_view}")
+        res = requests.get(f"https://tq-personality.onrender.com/reviews/{person_to_view}")
+
+
+        if res.status_code == 200:
+            result = res.json()
+            st.markdown(f"### الكلستر الخاص بـ {person_to_view}: `{result['cluster']}`")
             st.markdown(f"**{result['description']}**")
 
             trait_scores = result["scores"]
@@ -121,30 +136,15 @@ if submitted:
             values = [trait_scores[t] * 10 for t in traits]
 
             fig = go.Figure()
-            fig.add_trace(go.Bar(
-                x=traits,
-                y=values,
-                name='السمات',
-                marker_color='lightgreen',
-                opacity=0.6
-            ))
-            fig.add_trace(go.Scatter(
-                x=traits,
-                y=values,
-                mode='lines+markers',
-                name='مؤشر الشخصية',
-                line=dict(color='red'),
-                marker=dict(size=10)
-            ))
-            fig.update_layout(
-                title=f"تحليل السمات لـ {target_person_name}",
-                yaxis=dict(range=[0, 50]),
-                xaxis_title="البُعد",
-                yaxis_title="الدرجة (×10)",
-                template="plotly_white"
-            )
+            fig.add_trace(go.Bar(x=traits, y=values, name='السمات', marker_color='lightblue', opacity=0.6))
+            fig.add_trace(go.Scatter(x=traits, y=values, mode='lines+markers', name='مؤشر الشخصية',
+                                     line=dict(color='darkblue'), marker=dict(size=10)))
+            fig.update_layout(title=f"تحليل السمات لـ {person_to_view}",
+                              yaxis=dict(range=[0, 50]),
+                              xaxis_title="البُعد", yaxis_title="الدرجة (×10)",
+                              template="plotly_white")
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.error("💥 صار خطأ في الاتصال بالـ API. تأكد أنه شغال.")
+            st.error("📡 لم نتمكن من استرجاع البيانات.")
     except Exception as e:
-        st.error(f"❌ فشل الاتصال بالسيرفر: {e}")
+        st.error(f"❌ خطأ: {e}")

@@ -4,6 +4,13 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 import joblib
 import os
+from fastapi import FastAPI
+from pydantic import BaseModel
+from supabase import create_client, Client
+from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
+import joblib
+
 app = FastAPI()
 
 # تحميل النموذج المدرب
@@ -48,25 +55,6 @@ class PersonalityFullInput(BaseModel):
     CSN6: int; CSN7: int; CSN8: int; CSN9: int; CSN10: int
     OPN1: int; OPN2: int; OPN3: int; OPN4: int; OPN5: int
     OPN6: int; OPN7: int; OPN8: int; OPN9: int; OPN10: int
-
-# نموذج بيانات الـ 12 سؤال (peer review)
-class PeerReviewInput(BaseModel):
-    target_person: str
-    rater: str
-    EXT2: int
-    EXT3: int
-    EXT4: int
-    EXT5: int
-    EXT7: int
-    EXT9: int
-    EXT10: int
-    EST6: int
-    EST8: int
-    AGR7: int
-    OPN9: int
-    CSN4: int
-
-CSV_FILE = os.path.join(os.path.dirname(__file__), "personality_votes.csv")
 
 @app.post("/analyze")
 def analyze(data: PersonalityRaw):
@@ -139,44 +127,74 @@ def analyze_50(data: PersonalityFullInput):
         "scores": trait_scores
     }
 
+# ---------------
+
+# Supabase credentials
+SUPABASE_URL = "https://fbilhtmxiidtazaxcwhm.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiaWxodG14aWlkdGF6YXhjd2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI5MDUsImV4cCI6MjA2MDg5ODkwNX0.1Ozd9wzUZb-S7f0zD8WwhDhR-NhFTq2K8JFsrBMm4Uc"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Input schema
+class PeerReviewInput(BaseModel):
+    target_person: str
+    rater: str
+    EXT2: int
+    EXT3: int
+    EXT4: int
+    EXT5: int
+    EXT7: int
+    EXT9: int
+    EXT10: int
+    EST6: int
+    EST8: int
+    AGR7: int
+    OPN9: int
+    CSN4: int
+
 @app.post("/analyze-peer")
 def analyze_peer(data: PeerReviewInput):
     raw = data.dict()
-    target_person = raw.pop("target_person")
-    rater = raw.pop("rater")
 
-    input_df = pd.DataFrame([raw])
+    # Save to Supabase
+    supabase.table("peer_reviews").insert(raw).execute()
+    print('✅ Peer review inserted into Supabase.')
 
-    # حفظ التقييم في CSV
-    row_to_save = pd.DataFrame([{**{"target_person_name": target_person, "rater_name": rater}, **raw}])
-    if os.path.exists(CSV_FILE):
-        df_existing = pd.read_csv(CSV_FILE)
-        df_combined = pd.concat([df_existing, row_to_save], ignore_index=True)
-    else:
-        df_combined = row_to_save
-    df_combined.to_csv(CSV_FILE, index=False)
+    return {"message": "Review submitted successfully"}
 
-    # تحليل السمات والتصنيف
-    scaler = MinMaxScaler(feature_range=(0, 1))
+@app.get("/reviews/{person_name}")
+def get_reviews(person_name: str):
+    query = supabase.table("peer_reviews").select("*").eq("target_person", person_name).execute()
+    data = query.data
+
+    if not data:
+        return {"error": "No reviews found"}
+
+    df = pd.DataFrame(data)
+    trait_keys = ['EXT2','EXT3','EXT4','EXT5','EXT7','EXT9','EXT10','EST6','EST8','AGR7','OPN9','CSN4']
+    avg_scores = df[trait_keys].mean().to_dict()
+
+    # Prepare input
+    input_df = pd.DataFrame([{k: int(round(v)) for k, v in avg_scores.items()}])
+
+    scaler = MinMaxScaler((0, 1))
     scaler.fit(pd.DataFrame([[0]*12, [5]*12], columns=input_df.columns))
-    scaled_input = scaler.transform(input_df)
-    cluster = int(model_small.predict(scaled_input)[0])
+    scaled = scaler.transform(input_df)
 
-    description = cluster_descriptions.get(cluster, "\ud83e\udde9 ما عرفنا شخصيتك، بس أكيد فريدة من نوعها!")
+    cluster = int(model_small.predict(scaled)[0])
+    description = cluster_descriptions.get(cluster, "🧩 ما عرفنا شخصيتك، بس أكيد فريدة!")
 
-    # حساب السمات الرئيسية
-    ext = ['EXT2', 'EXT3', 'EXT4', 'EXT5', 'EXT7', 'EXT9', 'EXT10']
-    est = ['EST6', 'EST8']
+    ext = ['EXT2','EXT3','EXT4','EXT5','EXT7','EXT9','EXT10']
+    est = ['EST6','EST8']
     agr = ['AGR7']
     opn = ['OPN9']
     csn = ['CSN4']
 
     trait_scores = {
-        'extroversion': round(input_df[ext].sum(axis=1).iloc[0] / len(ext), 2),
-        'neurotic': round(input_df[est].sum(axis=1).iloc[0] / len(est), 2),
-        'agreeable': round(input_df[agr].sum(axis=1).iloc[0] / len(agr), 2),
-        'conscientious': round(input_df[csn].sum(axis=1).iloc[0] / len(csn), 2),
-        'open': round(input_df[opn].sum(axis=1).iloc[0] / len(opn), 2)
+        'extroversion': round(input_df[ext].mean(axis=1).iloc[0], 2),
+        'neurotic': round(input_df[est].mean(axis=1).iloc[0], 2),
+        'agreeable': round(input_df[agr].mean(axis=1).iloc[0], 2),
+        'conscientious': round(input_df[csn].mean(axis=1).iloc[0], 2),
+        'open': round(input_df[opn].mean(axis=1).iloc[0], 2)
     }
 
     return {
