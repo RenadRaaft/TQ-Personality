@@ -3,7 +3,70 @@ import requests
 import pandas as pd
 import plotly.graph_objects as go
 
+# إعداد الصفحة والتنسيق العام
 st.set_page_config(page_title="تحليل الشخصية", layout="wide")
+
+st.markdown("""
+    <style>
+    /* الخط العام */
+    html, body, [class*="st-"] {
+        font-family: 'Cairo', sans-serif;
+        text-align: right;
+        background-color: #f5f7fa;
+        color: #333;
+    }
+  
+    h1, h2, h3 {
+        color: #2e5cb8;
+        margin-bottom: 10px;
+        font-family: 'Cairo', sans-serif !important;
+
+    }
+
+    ul {
+    background-color: #ffffff;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+    max-width: 700px;
+    margin: 10px 0 10px auto;  /* خلى auto بس لليسار */
+    line-height: 2;
+    text-align: right;
+    }
+    
+    li {
+    margin: 10px 0 10px auto;  /* خلى auto بس لليسار */
+    font-size: 18px;
+    }
+
+    p {
+        line-height: 1.8;
+    }
+
+    /* تحسين مظهر الصور */
+    img {
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* تحسين الزر لاحقًا إن وجد */
+    .stButton>button {
+        background-color: #2e5cb8;
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+        padding: 10px 20px;
+        transition: 0.3s;
+        border: none;
+    }
+
+    .stButton>button:hover {
+        background-color: #1c3f91;
+    }
+    </style>
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
@@ -22,13 +85,48 @@ st.markdown("""
         width: 100%;
         display: block;
     }
+    /* Set all text color to black */
+    body, .stMarkdown, .stTitle, p, h1, h2, h3, h4, h5, h6, .stButton {
+        color: black;
+    }
 
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+    .stForm {
+        background-color: #f9f9f9;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        margin-bottom: 25px;
+        border: 1px solid #e0e0e0;
+    }
+    .stButton button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 25px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .stButton button:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+    .stButton button:active {
+        background-color: #004085;
+        transform: scale(1);
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# عنوان الموقع
-st.title("تحليل شخصيتك بطريقتنا الخاصة")
+# واجهة المستخدم
+st.markdown('<h1 style="color: black;">تحليل شخصيتك بطريقتنا الخاصة</h1>', unsafe_allow_html=True)
 
 st.markdown("""
 ### هل عمرك حسّيت إنك كائن غريب؟
@@ -58,7 +156,7 @@ questions = {
     'CSN4': 'أخبص الأمور وما أرتبها'
 }
 
-# جمع الإجابات
+# نموذج الإدخال
 responses = {}
 with st.form("form_arabic"):
     for key, question in questions.items():
@@ -82,13 +180,11 @@ if submitted:
             summary_df = pd.DataFrame([trait_scores])
             st.dataframe(summary_df.style.format(precision=1), use_container_width=True)
 
-            # رسم بياني بـ Plotly
             st.markdown("### تمثيل مرئي لأبعادك")
             traits = list(trait_scores.keys())
             values = [trait_scores[t] * 10 for t in traits]
 
             fig = go.Figure()
-
             fig.add_trace(go.Bar(
                 x=traits,
                 y=values,
@@ -110,7 +206,7 @@ if submitted:
                 title=f"الكلستر رقم {result['cluster']}",
                 yaxis=dict(range=[0, 50]),
                 xaxis_title="البُعد",
-                yaxis_title="الدرجة (مضروبة ×10)",
+                yaxis_title="الدرجة (×10)",
                 template="plotly_white"
             )
 
