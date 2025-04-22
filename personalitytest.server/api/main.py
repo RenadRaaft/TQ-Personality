@@ -7,11 +7,11 @@ import os
 app = FastAPI()
 
 # تحميل النموذج المدرب
-model_small = joblib.load("../models/kmeans_small_model.pkl")
+model_small = joblib.load("models/kmeans_small_model.pkl")
 
 
 # تحميل نموذج KMeans المدرب على الـ 50 سؤال
-model_large = joblib.load("../models/kmeans_model.pkl")
+model_large = joblib.load("models/kmeans_model.pkl")
 
 # وصف كل كلستر
 cluster_descriptions = {
@@ -66,7 +66,7 @@ class PeerReviewInput(BaseModel):
     OPN9: int
     CSN4: int
 
-CSV_FILE = "personality_votes.csv"
+CSV_FILE = os.path.join(os.path.dirname(__file__), "personality_votes.csv")
 
 @app.post("/analyze")
 def analyze(data: PersonalityRaw):
