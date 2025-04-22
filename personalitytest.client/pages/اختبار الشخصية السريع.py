@@ -166,7 +166,7 @@ with st.form("form_arabic"):
 # إرسال وتحليل
 if submitted:
     try:
-        res = requests.post("http://127.0.0.1:8000/analyze", json=responses)
+        res = requests.post("https://tq-personality.onrender.com/analyze", json=responses)
 
         if res.status_code == 200:
             result = res.json()

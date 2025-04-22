@@ -131,7 +131,7 @@ with st.form("form_full_50"):
 
 if submitted:
     try:
-        res = requests.post("http://127.0.0.1:8000/analyze_50", json=responses)
+        res = requests.post("https://tq-personality.onrender.com/analyze_50", json=responses)
 
         if res.status_code == 200:
             result = res.json()

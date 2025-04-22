@@ -103,7 +103,7 @@ if submitted:
             "rater": rater_name,
             **responses  # يفك القاموس responses ويدمجه في الـ payload
         }
-        res = requests.post("http://localhost:8000/analyze-peer", json=payload)
+        res = requests.post("https://tq-personality.onrender.com/analyze-peer", json=payload)
 
         if res.status_code == 200:
             result = res.json()
